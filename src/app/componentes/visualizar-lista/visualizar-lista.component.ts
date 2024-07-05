@@ -180,5 +180,6 @@ export class VisualizarListaComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.listarSeries();
   }
 }
