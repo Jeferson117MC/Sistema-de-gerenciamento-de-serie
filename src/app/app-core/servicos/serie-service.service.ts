@@ -1,38 +1,42 @@
  import { Injectable } from '@angular/core';
 import {Serie} from "../model/serie";
 import {Status} from "../model/status";
-
+ import Dexie from "dexie";
 @Injectable({
   providedIn: 'root'
 })
-export class SerieService {
+export class SerieService extends Dexie{
 
-  private serie: string[] = [];
-  private serieTeste: Serie[] =[];
+  series: Dexie.Table<Serie,number>;
+
   constructor() {
-  }
-  addSerie(serie: string){
-    this.serie.push(serie);
-    console.log('SERIES CADASTRADAS: ', this.serie);
+    super('SerieDB');
+    this.version(1).stores({
+      series: '' +
+        '++id, ' +
+        'titulo, ' +
+        'dataInicio, ' +
+        'dataConclusao, ' +
+        'status, ' +
+        'descricao, ' +
+        'imagem',
+    });
+    this.series = this.table('series');
   }
 
-  pupularTabelaTeste() : Serie[] {
-    let status: Status= new Status(0, 'Concluida');
-    let serie: Serie = new Serie(
-      'SSSS.Gridman',
-      '21/12/2022',
-      '01/01/2023',
-      'Robo gigante super detetive agora em anime!.',
-      status,
-      0);
-    let serie2: Serie = new Serie(
-      'Mashlee',
-      '08/04/2023',
-      '30/06/2023',
-      'Pra ganhar de magia treine seus musculos! F### your magic.',
-      status,
-      0);
-    this.serieTeste.push(serie, serie2);
-    return this.serieTeste;
+  async adicionarSerie(serie: Serie): Promise<number> {
+    return await this.series.add(serie);
+  }
+
+  async buscarSerie(): Promise<Serie[]>{
+    return await this.series.toArray();
+  }
+
+  async removerSerie(id:number): Promise<void>{
+    return await this.series.delete(id);
+  }
+
+  async atualizarSerie(id: number, serie: Serie): Promise<number>{
+    return await this.series.update(id, serie);
   }
 }

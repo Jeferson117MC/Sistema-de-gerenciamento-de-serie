@@ -1,8 +1,8 @@
-<!-- CORPO DO NOSSO COMPONENTE -->
+<!-- CORPO COMPONENTE -->
 <div class="container mt-4">
   <h2>Lista de Series
     <button class="btn btn-primary btn-arrendondamento"
-    (click)="openModal()">
+            (click)="openModal();form.reset()">
       <i class="fas fa-plus"></i>
       Nova Serie
     </button>
@@ -11,21 +11,32 @@
     <thead>
     <tr>
       <th scope="col">#</th>
-      <th scope="col">Nome</th>
+      <th scope="col">Serie</th>
       <th scope="col">Data Inicio</th>
       <th scope="col">Status</th>
       <th>Ações <i class="fas fa-cog"></i></th>
     </tr>
     </thead>
     <tbody>
-    <tr *ngFor="let t of series; let i = index">
-      <th scope="row"> {{ i }}</th>
-      <td>{{ t.titulo }}</td>
-      <td>{{ t.dataInicio }}</td>
-      <td> {{ t.status.status }}</td>
+    <tr *ngFor="let s of series; let i = index">
+      <th scope="row"> {{ i + 1}}</th>
+      <td>{{ s.titulo }}</td>
+      <td>{{ s.dataInicio | date: 'dd/MM/yyyy'}}</td>
+      <td> {{ s.status }}</td>
       <td>
-        <button class="btn btn-danger rounded-circle"><i class="fas fa-trash-alt"></i></button>
-        - <button class="btn btn-warning rounded-circle"><i class="fas fa-edit"></i></button>
+        <!--BOTÃO DE DELETAR-->
+        <button class="btn btn-danger rounded-circle" (click)="excluirSerie(s.id)">
+          <i class="fas fa-trash-alt"></i>
+        </button>
+        <!-- BOTÃO DE EDITAR -->
+        - <button class="btn btn-warning rounded-circle" (click)="carregarDadosSerie(s)">
+        <i class="fas fa-edit"></i>
+      </button>
+        <!-- BOTÃO DE VISUALIZAR -->
+        - <button type="button" class="btn btn-primary rounded-circle"
+                  data-toggle="modal" data-target="#serieModal" (click)="setSerieAtual(s)">
+        <i class="fas fa-eye"></i>
+      </button>
       </td>
     </tr>
     </tbody>
@@ -37,53 +48,110 @@
   <h3>CARREGANDO...</h3>
 </div>
 
+<!-- MODAL DE CADASTRO/EDIÇÃO -->
 <div class="modal" tabindex="-1" id="add-serie">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title"> Adicionar nova Serie </h5>
+        <h5 class="modal-title">
+          <ng-container *ngIf="form.value.id > 0; else novaSerie">
+            Editar serie
+          </ng-container>
+          <ng-template #novaSerie>
+            Adicionar Serie
+          </ng-template>
+        </h5>
       </div>
-      <form [formGroup]="form" (ngSubmit)="salvarFormSerie()">
-      <div class="modal-body">
+      <form [formGroup]="form" (ngSubmit)="submitForm()">
+        <div class="modal-body">
           <div class="form-row">
             <div class="mb-3 col-md-12">
-              <label class="form-label">Nome</label>
+              <label class="form-label">Titulo Serie</label>
               <input type="text" class="form-control" formControlName="tituloSerie">
+              <div class="text-danger" *ngIf="isCampoValido('tituloSerie')">
+                Campo Obrigatório
+              </div>
             </div>
             <div class="mb-3 col-md-6">
               <label class="form-label">Data Inicio</label>
               <input type="datetime-local" class="form-control" formControlName="dataInicioSerie">
+              <div class="text-danger" *ngIf="isCampoValido('dataInicioSerie')">
+                Campo Obrigatório
+              </div>
             </div>
             <div class="mb-3 col-md-6">
               <label class="form-label">Data Conclusão</label>
               <input type="datetime-local" class="form-control" formControlName="dataConclusaoSerie">
+              <div class="text-danger" *ngIf="isCampoValido('dataConclusaoSerie')">
+                Campo Obrigatório
+              </div>
             </div>
             <div class="md-3 col">
               <label>Status</label>
               <select class="form-control" formControlName="statusSerie">
-                <option value="NOVA">Iniciando</option>
+                <option value="NOVA">Nova</option>
                 <option value="EM_ANDAMENTO">Em Andamento</option>
                 <option value="CONCLUIDA">Concluída</option>
-                <option value="POR_COMECA">Por começar</option>
-                <option value="ABANDONADO">Abandonado</option>
               </select>
+              <div class="text-danger" *ngIf="isCampoValido('statusSerie')">
+                Campo Obrigatório
+              </div>
             </div>
             <div class="mb-12 col-md-12">
               <label class="form-check-label">
-                Sinopse
+                Descrição Serie
               </label>
               <textarea class="form-control" rows="3"
-              formControlName="sinopseSerie"></textarea>
+                        formControlName="sinopseSerie"></textarea>
+              <div class="text-danger" *ngIf="isCampoValido('sinopseSerie')">
+                Campo Obrigatório
+              </div>
+            </div>
+            <div class="md-3 col">
+              <hr>
+              <input type="file" accept="image/*" (change)="onFileChange($event)">
             </div>
           </div>
-      </div>
-      <div class="modal-footer">
-
-        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal"
-        (click)="closeModal()">Fechar</button>
-        <button class="btn btn-success" type="submit">Salvar</button>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" type="button" data-bs-dismiss="modal"
+                  (click)="closeModal()">Fechar</button>
+          <button class="btn btn-success" type="submit">Salvar</button>
         </div>
       </form>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE VISUALIZAR SERIE -->
+<div class="modal fade" id="serieModal" tabindex="-1" role="dialog"
+     aria-labelledby="visualizar" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="visualizar">Detalhes da Serie</h5>
+        <button class="close" type="button" data-dismiss="modal" arial-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p> <strong>Título:</strong>  {{ serieVisualizar?.titulo }} </p>
+        <p> <strong>Descrição:</strong>  {{ serieVisualizar?.sinopse }} </p>
+        <p> <strong>Status:</strong>  {{ serieVisualizar?.status }} </p>
+
+        <p> <strong>Data de Início:</strong>
+          {{ serieVisualizar?.dataInicio | date: 'dd/MM/yyyy'}} </p>
+
+        <p> <strong>Data de Conclusão:</strong>
+          {{ serieVisualizar?.dataConclusao | date: 'dd/MM/yyyy HH:mm:ss'}} </p>
+
+        <img [src]="serieVisualizar?.imagem" alt="Imagem da serie"
+             *ngIf="serieVisualizar?.imagem"
+             style="max-width: 100%; max-height: 300px; height: auto;">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
+      </div>
     </div>
   </div>
 </div>
